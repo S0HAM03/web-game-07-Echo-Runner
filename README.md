@@ -9,7 +9,7 @@ A feature-rich, high-performance **3D Endless Track Runner game** built using **
 - **🎮 3D Graphics Engine**: Built with Three.js, featuring dynamic lighting, post-processing unreal bloom, metallic humanoid player rig, and responsive camera controls.
 - **🎨 Skin & Theme Shop**: Integrated shop system with starting coin balance, unlockable player skins, and track color themes (Vaporwave, Cyberpunk, Synthwave, Neon).
 - **🔊 Web Audio API Sound Synthesizer**: Custom procedural sound synthesis for jumps, coin collections, shop purchases, and game events — zero external `.mp3` or `.wav` dependencies.
-- **🏆 Leaderboard System**: Built-in score ranking system tracking high scores, total runs, and coin stats with LocalStorage support and dedicated modal UI.
+- **🏆 Leaderboard System**: Score ranking system tracking high scores and coin stats with LocalStorage support, CrazyGames cloud-sync, and dedicated modal UI. Player rank is dynamically tagged and highlighted as `'you'`.
 - **☁️ Cloud Save & Data Sync**: Dual persistence via LocalStorage and CrazyGames Data module for seamless cross-device progress saving.
 - **📱 Full Mobile & Desktop Control System**:
   - Glassmorphic on-screen touch control buttons (`▲ IN` / `▼ OUT`).
@@ -17,7 +17,7 @@ A feature-rich, high-performance **3D Endless Track Runner game** built using **
   - Intuitive vertical swipe gestures (Swipe Up = In, Swipe Down = Out).
   - Responsive 2-column mobile & landscape modal layout with top-right `✕` close buttons.
 - **🖱️ Smart Input Separation**: Desktop mouse cursor is dedicated to UI interactions (Mute sound, Main Menu, Shop, Leaderboard, Restart) without interfering with player movement controls.
-- **⚡ CrazyGames SDK v3 Ready**: Integrated with SDK initialization, ad-break handlers, and cloud save data sync.
+- **⚡ CrazyGames SDK v3 Ready**: Integrated with SDK initialization, ad-break handlers, cloud save data sync, and pre-configured QA settings.
 
 ---
 
@@ -48,7 +48,7 @@ No node modules, local server setup, or compilation needed.
 
 ## 🛠️ Technology Stack
 
-- **HTML5 & CSS3** (Vanilla Glassmorphism UI & Flexbox layout)
+- **HTML5 & CSS3** (Vanilla Glassmorphic UI & Flexbox layout)
 - **JavaScript ES6+**
 - **Three.js** (3D Rendering Engine & Post-Processing Bloom)
 - **Web Audio API** (Procedural Audio Synthesis)
@@ -56,9 +56,15 @@ No node modules, local server setup, or compilation needed.
 
 ---
 
-## 📄 File Structure
+## 📄 File Structure & Submission Assets
 
 - **`index.html`**: The complete single-file standalone web game containing all logic, rendering, styles, audio generators, and embedded textures.
+- **`crazygames_covers/`**: Promotional game cover graphics in all standard submission aspect ratios:
+  - `cover_1920x1080.png` (16:9 Landscape)
+  - `cover_1360x850.png` (Featured Banner)
+  - `cover_800x1200.png` (2:3 Portrait)
+  - `cover_800x800.png` (1:1 Square)
+- **`game.zip`**: Upload-ready single-file bundle containing `index.html`.
 - **`README.md`**: Project documentation and usage guide.
 - **`LICENSE`**: MIT License copyright file.
 
