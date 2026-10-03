@@ -71,7 +71,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .sheet-sub{margin-top:10px}
 .sec{display:flex;align-items:center;gap:12px;margin:6px 0 14px}
 .sec::after{content:'';flex:1;border-top:3px dashed var(--ink);opacity:.35}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px;margin-bottom:22px}
 .item{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:14px 8px 12px;background:var(--paper);border:var(--bd);box-shadow:3px 3px 0 var(--ink);transition:transform .08s,box-shadow .08s;cursor:pointer}
 .item:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--ink)}
 .item.locked{opacity:.55;box-shadow:none}
@@ -454,18 +454,20 @@ document.getElementById('snd-btn').onclick = () => {
 /* ================================================================
    SHOP DATA & PERSISTENCE
    ================================================================ */
-const DEFAULT_COINS = 0;
+const DEFAULT_COINS = 10000; // TEST: set back to 0 before release
 let totalCoins = parseInt(localStorage.getItem('er_coins') || DEFAULT_COINS);
-let ownedItems = JSON.parse(localStorage.getItem('er_owned') || '["c_default","t_default"]');
-let equippedColor = localStorage.getItem('er_eq_color') || 'c_default';
+let ownedItems = JSON.parse(localStorage.getItem('er_owned') || '["ch_ink","t_default"]');
+let equippedColor = localStorage.getItem('er_eq_color') || 'ch_ink';
 let equippedTheme = localStorage.getItem('er_eq_theme') || 't_default';
 let bestScore = parseInt(localStorage.getItem('er_best') || '0');
 
+// Each character: legs, torso, skin, accent (hat/detail)
 const SHOP_COLORS = [
-  { id: 'c_default', name: 'Ink Black',    price: 0,   hex: '#1b1b1b' },
-  { id: 'c_cyan',    name: 'Cyan Core',     price: 50,  hex: '#1fb8a0' },
-  { id: 'c_red',     name: 'Crimson Blaze', price: 200, hex: '#d8143f' },
-  { id: 'c_gold',    name: 'Gold Rush',     price: 300, hex: '#e7b800' },
+  { id: 'ch_ink',    name: 'The Classic',   price: 0,   legs:'#1b1b1b', torso:'#2f5d8a', skin:'#f1c9a0', acc:'#1b1b1b' },
+  { id: 'ch_rust',   name: 'Dust Devil',    price: 80,  legs:'#8b3a1a', torso:'#c06f2c', skin:'#a8704a', acc:'#f0b323' },
+  { id: 'ch_neon',   name: 'Neon Ghost',    price: 200, legs:'#7b00ff', torso:'#1fb8a0', skin:'#c8f0ed', acc:'#ff00cc' },
+  { id: 'ch_flame',  name: 'Flame Runner',  price: 250, legs:'#8b1a00', torso:'#c63d00', skin:'#f1c9a0', acc:'#ff6a00' },
+  { id: 'ch_shadow', name: 'Shadow Run',    price: 500, legs:'#0d0d0d', torso:'#1a1a2e', skin:'#6f4a32', acc:'#e94560' },
 ];
 const SHOP_THEMES = [
   { id: 't_default', name: 'Print Shop', price: 0,   track: '#b9573b', grass: '#6e9b4c' },
@@ -500,8 +502,69 @@ function renderShop() {
     const cls = 'item' + (on ? ' equipped' : has ? ' owned' : !afford ? ' locked' : '');
     const tag = on ? 'Equipped' : has ? 'Equip' : afford ? 'Buy' : 'Need coins';
     const priceHtml = has ? '' : `<div class="iprice"><i class="coin-icon"></i> ${item.price}</div>`;
+    // Draw mini canvas character preview (static, no game ctx)
+    const cvs = document.createElement('canvas'); cvs.width = 54; cvs.height = 54;
+    const cx2 = cvs.getContext('2d'); const s2 = 2.2;
+    cx2.fillStyle = '#f6eedc'; cx2.fillRect(0,0,54,54);
+    cx2.strokeStyle = '#1b1b1b'; cx2.lineWidth = 1.5;
+    // Per-character FX preview (skip for ch_ink)
+    if (item.id !== 'ch_ink') {
+      const fxp = CHAR_FX ? CHAR_FX[item.id] : null;
+      if (fxp && item.id === 'ch_flame') {
+        // Fire glow
+        const fg = cx2.createRadialGradient(27,27,4,27,27,22);
+        fg.addColorStop(0,'rgba(255,230,100,0.9)'); fg.addColorStop(0.4,'rgba(255,60,0,0.7)'); fg.addColorStop(1,'rgba(0,0,0,0)');
+        cx2.fillStyle=fg; cx2.beginPath(); cx2.arc(27,27,22,0,Math.PI*2); cx2.fill();
+        for(let fi=0;fi<6;fi++){const fa=(fi/6)*Math.PI*2,fr=16+Math.sin(fi*1.9)*3;
+          cx2.fillStyle=fxp.fire1;cx2.globalAlpha=0.8;cx2.beginPath();
+          cx2.moveTo(27+Math.cos(fa-0.3)*8,27+Math.sin(fa-0.3)*8);
+          cx2.lineTo(27+Math.cos(fa)*fr,27+Math.sin(fa)*fr);
+          cx2.lineTo(27+Math.cos(fa+0.3)*8,27+Math.sin(fa+0.3)*8);
+          cx2.closePath();cx2.fill();
+          cx2.fillStyle=fxp.fire2;cx2.globalAlpha=0.7;cx2.beginPath();
+          cx2.moveTo(27+Math.cos(fa-0.18)*8,27+Math.sin(fa-0.18)*8);
+          cx2.lineTo(27+Math.cos(fa)*fr*0.65,27+Math.sin(fa)*fr*0.65);
+          cx2.lineTo(27+Math.cos(fa+0.18)*8,27+Math.sin(fa+0.18)*8);
+          cx2.closePath();cx2.fill();}
+        cx2.globalAlpha=1.0;
+      } else if (fxp && item.id === 'ch_neon') {
+        cx2.globalAlpha=0.18;cx2.fillStyle=fxp.glow;cx2.beginPath();cx2.arc(27,27,22,0,Math.PI*2);cx2.fill();
+        cx2.globalAlpha=0.6;cx2.strokeStyle=fxp.ring1;cx2.lineWidth=2;cx2.beginPath();cx2.arc(27,27,16,0,Math.PI*2);cx2.stroke();
+        cx2.globalAlpha=0.4;cx2.strokeStyle=fxp.ring2;cx2.lineWidth=1.3;cx2.beginPath();cx2.arc(27,27,20,0,Math.PI*2);cx2.stroke();
+        for(let d=0;d<4;d++){const da=(d/4)*Math.PI*2;cx2.fillStyle=d%2===0?fxp.ring1:fxp.ring2;cx2.globalAlpha=0.8;
+          cx2.beginPath();cx2.arc(27+Math.cos(da)*16,27+Math.sin(da)*16,1.8,0,Math.PI*2);cx2.fill();}
+        cx2.globalAlpha=1.0;
+      } else if (fxp && item.id === 'ch_rust') {
+        for(let d=0;d<10;d++){const da=(d/10)*Math.PI*2,dr=d%2===0?12:16;
+          cx2.fillStyle=d%3===0?fxp.swirl:d%3===1?fxp.dust1:fxp.dust2;
+          cx2.globalAlpha=0.55;cx2.beginPath();
+          cx2.arc(27+Math.cos(da)*dr,27+Math.sin(da)*dr*0.55,2,0,Math.PI*2);cx2.fill();}
+        cx2.globalAlpha=1.0;
+      } else if (fxp && item.id === 'ch_shadow') {
+        cx2.globalAlpha=0.18;cx2.fillStyle=fxp.clone;cx2.beginPath();cx2.ellipse(20,27,5,8,0,0,Math.PI*2);cx2.fill();
+        cx2.globalAlpha=0.6;cx2.strokeStyle=fxp.energy;cx2.lineWidth=2;cx2.beginPath();cx2.arc(27,27,18,0,Math.PI*2);cx2.stroke();
+        cx2.globalAlpha=1.0;
+      }
+    }
+    // shadow
+    cx2.fillStyle = 'rgba(27,27,27,.18)';
+    cx2.beginPath(); cx2.ellipse(30,46,10,4,0,0,Math.PI*2); cx2.fill();
+    // legs
+    cx2.fillStyle = item.legs;
+    cx2.beginPath(); cx2.ellipse(22,36,5*s2*.5,2.8*s2*.5,0,0,Math.PI*2); cx2.fill(); cx2.stroke();
+    cx2.beginPath(); cx2.ellipse(30,39,5*s2*.5,2.8*s2*.5,0,0,Math.PI*2); cx2.fill(); cx2.stroke();
+    // torso
+    cx2.fillStyle = item.torso;
+    cx2.beginPath(); cx2.ellipse(26,28,6*s2*.5,9*s2*.5,0,0,Math.PI*2); cx2.fill(); cx2.stroke();
+    // head
+    cx2.fillStyle = item.skin;
+    cx2.beginPath(); cx2.arc(26,18,5*s2*.5,0,Math.PI*2); cx2.fill(); cx2.stroke();
+    // accent dot (hat)
+    cx2.fillStyle = item.acc;
+    cx2.beginPath(); cx2.ellipse(26,13,4*s2*.4,2*s2*.4,-.3,0,Math.PI*2); cx2.fill();
+    const dataUrl = cvs.toDataURL();
     return `<div class="${cls}" data-id="${item.id}" data-kind="c">
-      <div class="thumb" style="background:${item.hex}"></div>
+      <img class="thumb" src="${dataUrl}" style="object-fit:contain;background:#f6eedc">
       <div class="iname">${item.name}</div>
       ${priceHtml}
       <div class="tag">${tag}</div>
@@ -558,9 +621,7 @@ function renderLB() {
   }).join('');
 }
 
-updateMenuData();
-renderShop();
-renderLB();
+// Deferred init — called after all game code is defined (see bottom of script)
 
 /* ================================================================
    CANVAS 2D GAME ENGINE — Print Shop Track Renderer
@@ -593,8 +654,8 @@ let gameState = 'menu';
 let rot = 0, speed = 0.35, lane = 2, score = 0, gameCoins = 0, lap = 1;
 let echo = 5, hitCool = 0;
 const BASE_SPEED = 0.35;       // starting speed (slower & smoother)
-const SPEED_STEP = 0.15;       // speed added every 3 laps
-const MAX_SPEED  = 2.0;        // hard cap
+const SPEED_STEP = 0.08;       // speed added every 4 laps (gentle ramp)
+const MAX_SPEED  = 1.8;        // hard cap
 let rocks = [], pickups = [], ghosts = [];
 const GHOST_INT = 5, CELLS = 10;
 let cdLastStep = 4;
@@ -635,12 +696,12 @@ function startGame() {
   pickups = [];
   ghosts = [];
 
-  // Progressive rocks: 24 total rocks (4 active per lap)
-  // 30 degrees = 0.52 rad. Rocks start at Math.PI / 2 + 0.55 rad so first 30 degrees are clear!
-  for (let i = 0; i < 24; i++) {
-    const minLap = Math.floor(i / 4) + 1; // 4 rocks unlocked per lap
-    const l = Math.floor(hash(i + 9) * 5); // integer lane 0..4
-    const a = Math.PI / 2 + 0.55 + i * (TAU - 0.6) / 24 + hash(i) * 0.08;
+  // Fixed obstacles: 10 total rocks pre-placed on the track from start
+  // All obstacles are present from Lap 1 with ZERO mid-game spawning
+  for (let i = 0; i < 10; i++) {
+    const minLap = 1; // All 10 rocks active from start
+    const l = Math.floor(hash(i * 2 + 7) * 5); // integer lane 0..4
+    const a = Math.PI / 2 + 0.6 + i * (TAU - 0.7) / 10 + hash(i + 3) * 0.08;
     rocks.push({ a, l, s: i, minLap });
   }
 
@@ -700,23 +761,17 @@ function ring(r, w, col) {
 }
 
 function person(x, y, a, s, i, t) {
-  const bob = Math.sin(t * 7 + i * 1.7);
   const shirt = SHIRTS[Math.floor(hash(i) * SHIRTS.length)];
   const skin = SKIN[Math.floor(hash(i + 3) * SKIN.length)];
-  ctx.save(); ctx.translate(x, y); ctx.rotate(a);
-  ctx.lineWidth = 1.3; ctx.strokeStyle = INK;
+  // Fast lightweight crowd figure without matrix transform overhead
+  ctx.fillStyle = shirt;
+  ctx.beginPath(); ctx.arc(x, y, 4.2 * s, 0, TAU); ctx.fill();
   ctx.fillStyle = skin;
-  for (const sy of [-1, 1]) {
-    ctx.beginPath(); ctx.arc(5 * s + 3 * s * (bob * 0.5 + 0.5), sy * 6.8 * s, 2.3 * s, 0, TAU);
-    ctx.fill(); ctx.stroke();
-  }
-  ctx.fillStyle = shirt; ctx.beginPath(); ctx.ellipse(0, 0, 4.2 * s, 7.4 * s, 0, 0, TAU); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(1 * s, 0, 3.5 * s, 0, TAU); ctx.fill(); ctx.stroke();
-  ctx.restore();
+  ctx.beginPath(); ctx.arc(x, y, 2.2 * s, 0, TAU); ctx.fill();
 }
 
 function crowdRow(r, s, dir, t, off) {
-  const step = (17 * s) / r;
+  const step = (22 * s) / r;
   const dMax = Math.asin(Math.min(1, (W / 2 + 40) / r));
   const N = Math.floor(dMax / step);
   for (let k = -N; k <= N; k++) {
@@ -758,32 +813,239 @@ function drawCoin(x, y, r, t, ph) {
   ctx.restore();
 }
 
-function drawRunner(x, y, s, t, ghost) {
-  ctx.save(); ctx.translate(x, y);
-  const isRunning = (gameState === 'playing');
-  const leg = isRunning ? Math.sin(t * 14) * 3.5 * s : 0;
-  const colorItem = SHOP_COLORS.find(c => c.id === equippedColor) || SHOP_COLORS[0];
-  const playerCol = colorItem.hex;
+// Per-character effect palettes
+const CHAR_FX = {
+  ch_flame:  { fire1: '#ff2200', fire2: '#ff8800', core: '#ffe680' },
+  ch_neon:   { ring1: '#ff00cc', ring2: '#00ffff', glow: '#7b00ff' },
+  ch_rust:   { dust1: '#c8a96b', dust2: '#a0744a', swirl: '#f0b323' },
+  ch_shadow: { clone: '#1a1a2e', energy: '#e94560', pulse: '#7b00ff' },
+};
 
-  // Ground shadow
-  ctx.fillStyle = 'rgba(27,27,27,.25)';
-  ctx.beginPath(); ctx.ellipse(3 * s, 4 * s, 9 * s, 9 * s, 0, 0, TAU); ctx.fill();
+function drawCharFx(c, s, t, charId) {
+  if (!charId || charId === 'ch_ink') return;
+  const fx = CHAR_FX[charId];
+  if (!fx) return;
+  c.save();
 
-  ctx.lineWidth = 2.5;
-  ctx.strokeStyle = INK;
+  if (charId === 'ch_flame') {
+    // === FLAME RUNNER: Real animated fire surrounding runner ===
+    // Outer fire ring (6 tongues flickering at different rates)
+    const tongues = 6;
+    for (let i = 0; i < tongues; i++) {
+      const baseA = (i / tongues) * TAU - Math.PI / 2;
+      const flick = Math.sin(t * 20 + i * 1.1) * 0.18;
+      const angle = baseA + flick;
+      const innerR = 6.5 * s;
+      const outerR = (10 + Math.sin(t * 15 + i * 1.7) * 3) * s;
 
-  // Player runner
-  ctx.fillStyle = playerCol;
-  for (const sy of [-1, 1]) {
-    ctx.beginPath(); ctx.ellipse(-6 * s + sy * leg, sy * 3.5 * s, 4.5 * s, 2.4 * s, 0, 0, TAU);
-    ctx.fill(); ctx.stroke();
+      const bx1 = Math.cos(angle - 0.32) * innerR;
+      const by1 = Math.sin(angle - 0.32) * innerR;
+      const bx2 = Math.cos(angle + 0.32) * innerR;
+      const by2 = Math.sin(angle + 0.32) * innerR;
+      const tipX = Math.cos(angle) * outerR;
+      const tipY = Math.sin(angle) * outerR;
+      const midX = Math.cos(angle) * (outerR * 0.6);
+      const midY = Math.sin(angle) * (outerR * 0.6);
+
+      // outer tongue
+      c.globalAlpha = 0.75;
+      c.fillStyle = fx.fire1;
+      c.beginPath();
+      c.moveTo(bx1, by1);
+      c.quadraticCurveTo(midX + Math.cos(angle + Math.PI/2) * 1.5 * s, midY + Math.sin(angle + Math.PI/2) * 1.5 * s, tipX, tipY);
+      c.quadraticCurveTo(midX - Math.cos(angle + Math.PI/2) * 1.5 * s, midY - Math.sin(angle + Math.PI/2) * 1.5 * s, bx2, by2);
+      c.closePath();
+      c.fill();
+
+      // inner bright core tongue
+      c.globalAlpha = 0.85;
+      c.fillStyle = fx.fire2;
+      c.beginPath();
+      c.moveTo(bx1 * 0.7, by1 * 0.7);
+      c.quadraticCurveTo(midX * 0.75, midY * 0.75, tipX * 0.7, tipY * 0.7);
+      c.quadraticCurveTo(midX * 0.75, midY * 0.75, bx2 * 0.7, by2 * 0.7);
+      c.closePath();
+      c.fill();
+
+      // white-hot core tip
+      c.globalAlpha = 0.6;
+      c.fillStyle = fx.core;
+      c.beginPath();
+      c.arc(tipX * 0.65, tipY * 0.65, 1.2 * s, 0, TAU);
+      c.fill();
+    }
+    // Rising sparks
+    for (let e = 0; e < 5; e++) {
+      const et = (t * 2.5 + e * 0.7) % 1.0;
+      const ea = (e / 5) * TAU + t * 2;
+      const er2 = (5 + et * 7) * s;
+      const ex2 = Math.cos(ea) * er2;
+      const ey2 = Math.sin(ea) * er2 - et * 6 * s;
+      c.fillStyle = e % 2 === 0 ? fx.core : fx.fire2;
+      c.globalAlpha = (1 - et) * 0.8;
+      c.beginPath();
+      c.arc(ex2, ey2, Math.max(0.4, (1 - et) * 1.8 * s), 0, TAU);
+      c.fill();
+    }
+
+  } else if (charId === 'ch_neon') {
+    // === NEON GHOST: ghost flicker + scanning neon rings ===
+    // Ghost body flicker (translucent copy offset)
+    const ghostA = Math.sin(t * 6) * 0.3 + 0.15;
+    c.globalAlpha = ghostA;
+    c.fillStyle = fx.glow;
+    c.beginPath(); c.ellipse(-3 * s, 0, 4.5 * s, 7.5 * s, 0, 0, TAU); c.fill();
+    c.beginPath(); c.arc(-3 * s, -5 * s, 3.2 * s, 0, TAU); c.fill();
+    c.globalAlpha = 1.0;
+
+    // Neon ring 1 — magenta, pulsing
+    const r1 = (8 + Math.sin(t * 7) * 1.5) * s;
+    c.globalAlpha = 0.5 + 0.3 * Math.sin(t * 7);
+    c.strokeStyle = fx.ring1;
+    c.lineWidth = 1.8 * s;
+    c.beginPath(); c.arc(0, 0, r1, 0, TAU); c.stroke();
+
+    // Neon ring 2 — cyan, opposite phase
+    const r2 = (10.5 + Math.cos(t * 9) * 1.5) * s;
+    c.globalAlpha = 0.35 + 0.2 * Math.cos(t * 9);
+    c.strokeStyle = fx.ring2;
+    c.lineWidth = 1.2 * s;
+    c.beginPath(); c.arc(0, 0, r2, 0, TAU); c.stroke();
+
+    // Scanning arc — rotates around player
+    const scanA = t * 4;
+    c.globalAlpha = 0.6;
+    c.strokeStyle = fx.ring2;
+    c.lineWidth = 2.2 * s;
+    c.beginPath(); c.arc(0, 0, r1 * 0.85, scanA, scanA + 1.1); c.stroke();
+    c.beginPath(); c.arc(0, 0, r1 * 0.85, scanA + Math.PI, scanA + Math.PI + 1.1); c.stroke();
+
+    // Neon dots orbiting
+    for (let d = 0; d < 4; d++) {
+      const da = t * 5 + d * TAU / 4;
+      const dr = 9 * s;
+      c.globalAlpha = 0.7;
+      c.fillStyle = d % 2 === 0 ? fx.ring1 : fx.ring2;
+      c.beginPath(); c.arc(Math.cos(da) * dr, Math.sin(da) * dr, 1.3 * s, 0, TAU); c.fill();
+    }
+
+  } else if (charId === 'ch_rust') {
+    // === DUST DEVIL: rotating dust cyclone around runner ===
+    const particles = 12;
+    for (let d = 0; d < particles; d++) {
+      const phase = (d / particles) * TAU;
+      // Two orbiting rings at different radii and speeds
+      const ring = d % 2;
+      const orbitR = (ring === 0 ? 8 : 11) * s;
+      const angSpeed = ring === 0 ? 3.5 : -2.5; // opposite directions!
+      const da = phase + t * angSpeed;
+      const dx2 = Math.cos(da) * orbitR;
+      const dy2 = Math.sin(da) * orbitR * 0.5; // ellipse = horizontal cyclone
+      const dsize = (0.8 + 0.6 * Math.sin(phase + t * 4)) * s;
+      const dalpha = 0.3 + 0.4 * Math.abs(Math.sin(phase + t * 2));
+      c.globalAlpha = dalpha;
+      c.fillStyle = d % 3 === 0 ? fx.swirl : (d % 3 === 1 ? fx.dust1 : fx.dust2);
+      c.beginPath();
+      c.arc(dx2, dy2, Math.max(0.5, dsize), 0, TAU);
+      c.fill();
+    }
+    // Central swirl glow
+    const swGrad = c.createRadialGradient(0, 0, 1 * s, 0, 0, 7 * s);
+    swGrad.addColorStop(0, 'rgba(240,179,35,0.3)');
+    swGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = swGrad;
+    c.globalAlpha = 0.6 + 0.2 * Math.sin(t * 8);
+    c.beginPath(); c.ellipse(0, 0, 7 * s, 5 * s, 0, 0, TAU); c.fill();
+
+  } else if (charId === 'ch_shadow') {
+    // === SHADOW RUN: trailing shadow clones + red energy pulse ===
+    // 3 shadow after-images, fading behind
+    for (let sh = 0; sh < 3; sh++) {
+      const offset = (sh + 1) * 5 * s;
+      const alpha = 0.22 - sh * 0.06;
+      const scale = 1 - sh * 0.08;
+      c.globalAlpha = alpha;
+      c.fillStyle = fx.clone;
+      c.beginPath(); c.ellipse(-offset, 0, 5 * s * scale, 8 * s * scale, 0, 0, TAU); c.fill();
+      c.beginPath(); c.arc(-offset, -6 * s * scale, 3.5 * s * scale, 0, TAU); c.fill();
+    }
+    // Red energy pulse ring
+    const pulsePh = (t * 2.5) % 1.0;
+    c.globalAlpha = (1 - pulsePh) * 0.65;
+    c.strokeStyle = fx.energy;
+    c.lineWidth = 2.5 * s * (1 - pulsePh * 0.5);
+    c.beginPath(); c.arc(0, 0, (5 + pulsePh * 10) * s, 0, TAU); c.stroke();
+
+    // Second pulse offset half-cycle
+    const pulsePh2 = (t * 2.5 + 0.5) % 1.0;
+    c.globalAlpha = (1 - pulsePh2) * 0.4;
+    c.strokeStyle = fx.pulse;
+    c.lineWidth = 1.5 * s;
+    c.beginPath(); c.arc(0, 0, (5 + pulsePh2 * 10) * s, 0, TAU); c.stroke();
+
+    // Dark shadow glow
+    const shGrad = c.createRadialGradient(0, 0, 2 * s, 0, 0, 11 * s);
+    shGrad.addColorStop(0, 'rgba(233,69,96,0.25)');
+    shGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = shGrad;
+    c.globalAlpha = 0.7;
+    c.beginPath(); c.ellipse(0, 0, 11 * s, 11 * s, 0, 0, TAU); c.fill();
   }
-  ctx.fillStyle = '#2f5d8a';
-  ctx.beginPath(); ctx.ellipse(0, 0, 5.5 * s, 8.5 * s, 0, 0, TAU); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#f1c9a0';
-  ctx.beginPath(); ctx.arc(2.5 * s, 0, 4.2 * s, 0, TAU); ctx.fill(); ctx.stroke();
 
-  ctx.restore();
+  c.globalAlpha = 1.0;
+  c.restore();
+}
+
+function drawRunner(x, y, s, t, ghost, customCtx, forceCharId) {
+  const c = customCtx || ctx;
+  c.save(); c.translate(x, y);
+  const isRunning = (gameState === 'playing');
+  const animRate = 14 * (speed / BASE_SPEED);
+  const leg = isRunning ? Math.sin(t * animRate) * 3.5 * s : 0;
+
+  // Pick character colors; ghost uses fixed ghostly palette
+  let legCol, torsoCol, skinCol, accCol, charId;
+  if (ghost) {
+    legCol = '#7b00ff'; torsoCol = '#1fb8a0'; skinCol = '#c8f0ed'; accCol = '#ff00cc'; charId = 'ghost';
+  } else {
+    const cid = forceCharId || equippedColor;
+    const charItem = SHOP_COLORS.find(item => item.id === cid) || SHOP_COLORS[0];
+    legCol = charItem.legs; torsoCol = charItem.torso; skinCol = charItem.skin; accCol = charItem.acc;
+    charId = charItem.id;
+  }
+
+  const INK_STROKE = ghost ? accCol : INK;
+
+  // — — — CHARACTER FX — — —
+  drawCharFx(c, s, t, charId);
+
+  // — — — BODY — — —
+  // Ground shadow
+  c.fillStyle = 'rgba(27,27,27,.25)';
+  c.beginPath(); c.ellipse(2 * s, 4 * s, 9 * s, 4 * s, 0, 0, TAU); c.fill();
+
+  c.lineWidth = 2.5;
+  c.strokeStyle = INK_STROKE;
+
+  // Legs
+  c.fillStyle = legCol;
+  for (const sy of [-1, 1]) {
+    c.beginPath(); c.ellipse(-6 * s + sy * leg, sy * 3.5 * s, 4.5 * s, 2.4 * s, 0, 0, TAU);
+    c.fill(); c.stroke();
+  }
+  // Torso
+  c.fillStyle = torsoCol;
+  c.beginPath(); c.ellipse(0, 0, 5.5 * s, 8.5 * s, 0, 0, TAU); c.fill(); c.stroke();
+  // Head — centered on torso, no x-offset, properly sized
+  c.fillStyle = skinCol;
+  c.beginPath(); c.arc(0, 0, 3.8 * s, 0, TAU); c.fill(); c.stroke();
+  // Accent cap band across top of head
+  c.fillStyle = accCol;
+  c.globalAlpha = 0.75;
+  c.beginPath(); c.ellipse(0, -2.8 * s, 3.6 * s, 1.4 * s, 0, 0, TAU); c.fill();
+  c.globalAlpha = 1.0;
+
+  c.restore();
 }
 
 function draw(t) {
@@ -798,7 +1060,7 @@ function draw(t) {
   ctx.fillStyle = GRASS1; ctx.fillRect(0, 0, W, H);
 
   ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot);
-  ctx.fillStyle = GRASS2; const R = rOut + H, n = 36;
+  ctx.fillStyle = GRASS2; const R = rOut + H, n = 18;
   for (let i = 0; i < n; i += 2) {
     ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, i / n * TAU, (i + 1) / n * TAU); ctx.closePath(); ctx.fill();
   }
@@ -809,8 +1071,8 @@ function draw(t) {
 
   ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot);
   ctx.strokeStyle = 'rgba(27,27,27,.09)'; ctx.lineWidth = 1.5; ctx.beginPath();
-  for (let i = 0; i < 120; i++) {
-    const a = i / 120 * TAU;
+  for (let i = 0; i < 36; i++) {
+    const a = i / 36 * TAU;
     ctx.moveTo(Math.cos(a) * rIn, Math.sin(a) * rIn);
     ctx.lineTo(Math.cos(a) * rOut, Math.sin(a) * rOut);
   }
@@ -830,38 +1092,44 @@ function draw(t) {
   ring(rIn, 3, INK); ring(rOut, 3, INK);
 
   ring(rOut + 40, 10, '#d9c9a5'); ring(rOut + 14, 4, INK);
-  ctx.setLineDash([46, 46]); ring(rOut + 26, 16, '#e4472b');
-  ctx.lineDashOffset = 46; ring(rOut + 26, 16, '#f6eedc');
-  ctx.setLineDash([]); ctx.lineDashOffset = 0;
   ring(rOut + 19, 2, INK); ring(rOut + 33, 2, INK);
   ring(rOut + 78, 82, STAND); ring(rOut + 120, 3, INK); ring(rOut + 36, 3, INK);
   ring(rOut + 66, 2, 'rgba(27,27,27,.25)'); ring(rOut + 90, 2, 'rgba(27,27,27,.25)');
 
   ring(rIn - 14, 4, INK);
-  ctx.setLineDash([40, 40]); ring(rIn - 26, 16, '#2f5d8a');
-  ctx.lineDashOffset = 40; ring(rIn - 26, 16, '#f6eedc');
-  ctx.setLineDash([]); ctx.lineDashOffset = 0;
   ring(rIn - 19, 2, INK); ring(rIn - 33, 2, INK);
   ring(rIn - 58, 46, STAND); ring(rIn - 82, 3, INK);
 
-  // Reduce crowd density at high speeds for better readability & performance
-  if (speed < MAX_SPEED * 0.7) {
-    crowdRow(rOut + 58, 1.15, 1, t, 0);
-    crowdRow(rOut + 90, 1.15, 1, t, 500);
-    crowdRow(rIn - 58, 0.95, -1, t, 900);
-  } else {
-    crowdRow(rOut + 74, 1.0, 1, t, 0);
-    crowdRow(rIn - 58, 0.85, -1, t, 900);
-  }
+  // Fast crowd rendering
+  crowdRow(rOut + 74, 1.0, 1, t, 0);
+  crowdRow(rIn - 58, 0.85, -1, t, 900);
+
+  // Helper: is a track angle currently in the visible arc (near player position π/2)?
+  // Player sits at angle π/2. Visible arc is roughly ±0.55 rad from π/2 at rMid.
+  const norm = a => { a = ((a % TAU) + TAU) % TAU; if (a > Math.PI) a -= TAU; return a; };
+  const visibleArc = 0.65; // radians half-width of visible track section
+  const isInView = (objAngle) => Math.abs(norm(objAngle + rot - Math.PI / 2)) < visibleArc;
 
   for (const c of pickups) {
     if (c.got) continue;
+    // Grace period for coins that just came off the got-reset: skip if in view and no activatedAt yet
+    if (c.activatedAt === undefined) c.activatedAt = 0;
     const [x, y] = P(laneR(c.l), c.a + rot);
     if (x > -40 && x < W + 40 && y > -40 && y < H + 40)
       drawCoin(x, y, lw * 0.17, t, c.ph);
   }
   for (const k of rocks) {
-    if (k.minLap > lap) continue; // Only draw active rocks!
+    if (k.minLap > lap) continue; // not yet active
+    // Detect first activation: record when this rock became live
+    if (k.activatedLap !== lap && k.minLap === lap) {
+      // Rock just unlocked this lap
+      if (k.activatedLap === undefined || k.activatedLap < lap) {
+        k.activatedLap = lap;
+        k.activatedAt = t;
+      }
+    }
+    // Suppress newly-activated rocks that are currently in the visible arc for 1.5s
+    if (k.activatedAt !== undefined && (t - k.activatedAt) < 1.5 && isInView(k.a)) continue;
     const [x, y] = P(laneR(k.l), k.a + rot);
     if (x > -80 && x < W + 80 && y > -80 && y < H + 80)
       drawRock(x, y, lw * 0.3, k.s, false);
@@ -957,11 +1225,11 @@ function loop(now) {
     score = Math.floor(absRot * 30);
     const newLap = Math.floor(absRot / TAU) + 1;
 
-    // Every 3 laps: bump speed
+    // Every new lap: bump speed every 4 laps
     if (newLap > lap) {
       lap = newLap;
-      if ((lap - 1) % 3 === 0) {
-        speed = Math.min(BASE_SPEED + Math.floor((lap - 1) / 3) * SPEED_STEP, MAX_SPEED);
+      if ((lap - 1) % 4 === 0) {
+        speed = Math.min(BASE_SPEED + Math.floor((lap - 1) / 4) * SPEED_STEP, MAX_SPEED);
       }
     } else {
       lap = newLap;
@@ -973,6 +1241,16 @@ function loop(now) {
 
     // Safe angle normalizer — robust for any rot sign & multi-lap values
     const norm = a => { a = ((a % TAU) + TAU) % TAU; if (a > Math.PI) a -= TAU; return a; };
+
+    // 12 o'clock coin respawn: coins that were collected respawn when their position reaches 12 o'clock (top of track circle, opposite side from player)
+    for (const c of pickups) {
+      if (c.got) {
+        const angleAt12 = norm(c.a + rot - (-Math.PI / 2));
+        if (Math.abs(angleAt12) < 0.25) {
+          c.got = false; // Respawn cleanly at 12 o'clock off-screen
+        }
+      }
+    }
 
     // Coin pickup — object screen pos = obj.a + rot (matches draw)
     for (const c of pickups) {
@@ -1019,6 +1297,11 @@ function loop(now) {
 }
 
 requestAnimationFrame(loop);
+
+// Deferred init — runs after all functions and constants are defined
+updateMenuData();
+renderShop();
+renderLB();
 </script>
 </body>
 </html>
