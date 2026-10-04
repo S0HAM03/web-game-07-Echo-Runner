@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Echo Runner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--paper);color:v
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 /* --- canvas --- */
-#cv{position:fixed;inset:0;z-index:0;display:none;will-change:transform;image-rendering:pixelated}
+#cv{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;display:none;will-change:transform}
 #hit{position:fixed;inset:0;box-shadow:inset 0 0 0 14px rgba(228,71,43,.55);opacity:0;transition:opacity .4s;pointer-events:none;z-index:4}
 
 /* --- backdrop (shown only on menu screens) --- */
@@ -842,8 +842,11 @@ document.getElementById('rotate-fs-btn').onclick = () => {
 let W, H, D, cx, cy, rIn, rOut, tw, lw;
 function resizeCanvas() {
   D = Math.min(devicePixelRatio || 1, 2);
-  W = innerWidth; H = innerHeight;
-  cv.width = W * D; cv.height = H * D;
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * D);
+  cv.height = Math.round(H * D);
+  cv.style.width = W + 'px';
+  cv.style.height = H + 'px';
 
   // Unified camera: always use same geometry, just swap W↔H for portrait
   // This makes portrait mobile look identical to landscape PC
