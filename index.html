@@ -156,39 +156,149 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #btn-touch-out::before{border-top-color:#fff}
 @media(pointer:coarse){#mobile-controls{display:flex}}
 
-/* ===== COMPACT MOBILE HUD (touch devices) ===== */
-@media(pointer:coarse){
-  /* Shrink top buttons */
-  #top-bar-btns{top:6px;left:6px;gap:5px}
-  #snd-btn,#fs-btn{padding:4px 8px;font-size:9px;border-width:2px;box-shadow:2px 2px 0 var(--ink)}
+/* ===== COMPACT MOBILE HUD (all mobile, small screens & touch devices) ===== */
+@media (max-width: 900px), (max-height: 600px), (pointer: coarse) {
+  #mobile-controls { display: flex !important; }
 
-  /* Lap box — small, below top buttons */
-  #lap-box{top:42px;left:6px;padding:3px 8px 4px;border-width:2px;box-shadow:2px 2px 0 var(--ink)}
-  #lap-txt{font-size:13px}
+  /* Shrink top buttons & position at top-left */
+  #top-bar-btns {
+    top: 4px !important;
+    left: 4px !important;
+    gap: 3px !important;
+  }
+  #snd-btn, #fs-btn {
+    padding: 2px 6px !important;
+    font-size: 8px !important;
+    letter-spacing: 0.04em !important;
+    border: 1.5px solid var(--ink) !important;
+    box-shadow: 1.5px 1.5px 0 var(--ink) !important;
+  }
 
-  /* Score box — compact */
-  #score-box{top:6px;min-width:90px;border-width:2px;box-shadow:2px 2px 0 var(--ink)}
-  #score-val{font-size:clamp(20px,5vw,30px);padding:4px 12px 3px}
-  #score-lbl{font-size:9px;padding:2px 0}
-  .lbl{font-size:9px;letter-spacing:.1em}
+  /* Lap box — compact badge below top buttons */
+  #lap-box {
+    top: 26px !important;
+    left: 4px !important;
+    padding: 1px 6px 2px !important;
+    border: 1.5px solid var(--ink) !important;
+    box-shadow: 1.5px 1.5px 0 var(--ink) !important;
+    transform: none !important;
+  }
+  #lap-txt {
+    font-size: 10px !important;
+  }
 
-  /* Coins — top right, compact */
-  #coin-box{top:6px;right:6px;font-size:13px;padding:3px 8px;gap:5px;border-width:2px;box-shadow:2px 2px 0 var(--ink)}
-  .coin{width:13px;height:13px;border-width:2px}
+  /* Score box — minimalist center top badge */
+  #score-box {
+    top: 4px !important;
+    min-width: 65px !important;
+    border: 1.5px solid var(--ink) !important;
+    box-shadow: 1.5px 1.5px 0 var(--ink) !important;
+  }
+  #score-val {
+    font-size: 16px !important;
+    padding: 1px 8px 0 !important;
+  }
+  #score-lbl {
+    font-size: 7px !important;
+    padding: 1px 0 !important;
+    letter-spacing: 0.04em !important;
+  }
+  .lbl {
+    font-size: 7px !important;
+    letter-spacing: 0.04em !important;
+  }
 
-  /* Speed badge */
-  #spd-box{top:42px;right:6px;font-size:12px;padding:2px 8px;border-width:2px;box-shadow:2px 2px 0 var(--ink)}
+  /* Coins — compact top-right */
+  #coin-box {
+    top: 4px !important;
+    right: 4px !important;
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+    gap: 3px !important;
+    border: 1.5px solid var(--ink) !important;
+    box-shadow: 1.5px 1.5px 0 var(--ink) !important;
+  }
+  .coin {
+    width: 10px !important;
+    height: 10px !important;
+    border-width: 1.5px !important;
+  }
 
-  /* Echo bar — much smaller, stays at bottom */
-  #ghost-bar-wrap{width:min(300px,82vw);padding:5px 8px 7px;border-width:2px;box-shadow:2px 2px 0 var(--ink);bottom:calc(env(safe-area-inset-bottom,0px) + 76px)}
-  #echo-sec{font-size:13px}
-  #echo-cells i{height:8px;border-width:1px}
+  /* Speed badge — compact right side below coins */
+  #spd-box {
+    top: 26px !important;
+    right: 4px !important;
+    font-size: 9px !important;
+    padding: 1px 5px 2px !important;
+    border: 1.5px solid var(--ink) !important;
+    box-shadow: 1.5px 1.5px 0 var(--ink) !important;
+    transform: none !important;
+  }
+
+  /* Echo bar (Next Echo) — sleek mini bar at bottom center */
+  #ghost-bar-wrap {
+    width: min(190px, 55vw) !important;
+    padding: 2px 5px 3px !important;
+    border: 1.5px solid var(--ink) !important;
+    box-shadow: 1.5px 1.5px 0 var(--ink) !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 4px) !important;
+  }
+  .echo-top {
+    margin-bottom: 1px !important;
+  }
+  #echo-sec {
+    font-size: 9px !important;
+  }
+  #echo-cells {
+    gap: 2px !important;
+  }
+  #echo-cells i {
+    height: 4px !important;
+    border-width: 1px !important;
+  }
 
   /* Echo incoming warning */
-  #ghost-warn{font-size:11px;padding:4px 10px;bottom:68px;border-width:2px}
+  #ghost-warn {
+    font-size: 9px !important;
+    padding: 2px 6px !important;
+    bottom: 30px !important;
+    border: 1.5px solid var(--ink) !important;
+    box-shadow: 1.5px 1.5px 0 var(--ink) !important;
+  }
 
   /* Countdown */
-  #countdown-ui{font-size:clamp(60px,18vw,160px)}
+  #countdown-ui {
+    font-size: clamp(40px, 14vw, 100px) !important;
+  }
+
+  /* Touch controls — sleek compact buttons at bottom corners */
+  #mobile-controls {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 4px) !important;
+    left: 4px !important;
+    right: 4px !important;
+    padding: 0 !important;
+  }
+  .touch-btn {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 8px !important;
+    border: 1.5px solid var(--ink) !important;
+    box-shadow: 1.5px 1.5px 0 var(--ink) !important;
+    border-radius: 8px !important;
+    opacity: 0.8 !important;
+    gap: 1px !important;
+  }
+  .touch-btn::before {
+    border-width: 4px !important;
+  }
+  #btn-touch-in::before {
+    border-bottom-width: 6px !important;
+    border-top-width: 0 !important;
+  }
+  #btn-touch-out::before {
+    border-top-width: 6px !important;
+    border-bottom-width: 0 !important;
+  }
 }
 
 /* Menu/sheet on small screens */
@@ -852,7 +962,7 @@ function startGame() {
   document.getElementById('countdown-ui').style.display = 'block';
   document.getElementById('countdown-ui').textContent = '3';
 
-  if (/Android|iPhone|iPad|Touch/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0) {
+  if (/Android|iPhone|iPad|Touch/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0 || window.innerWidth <= 900 || window.innerHeight <= 600) {
     document.getElementById('mobile-controls').style.display = 'flex';
   }
 
