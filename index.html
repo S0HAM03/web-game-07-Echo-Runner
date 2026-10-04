@@ -115,6 +115,17 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #game-coin-disp{display:inline-block;transition:transform .15s cubic-bezier(.34,1.56,.64,1)}
 #spd-box{top:74px;right:22px;transform:rotate(3deg);background:var(--red);color:#fff;border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);padding:4px 12px 5px;font-family:var(--head);font-size:18px}
 
+/* Mobile portrait HUD: push lap-box below top buttons, scale down, reposition speed */
+@media(max-width:600px) and (orientation:portrait){
+  #lap-box{top:68px;left:10px;padding:4px 10px 5px}
+  #lap-txt{font-size:15px}
+  #score-box{top:10px;min-width:110px}
+  #score-val{font-size:clamp(24px,6vw,34px);padding:5px 14px 4px}
+  #coin-box{top:68px;right:10px;font-size:15px;padding:4px 10px;gap:6px}
+  .coin{width:15px;height:15px}
+  #spd-box{top:104px;right:14px;font-size:14px;padding:3px 9px 4px}
+}
+
 /* top buttons - fixed always visible */
 #top-bar-btns{position:fixed;top:18px;left:18px;z-index:25;display:flex;gap:8px;pointer-events:auto}
 #snd-btn, #fs-btn{padding:6px 12px;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;background:var(--card);border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);cursor:pointer}
@@ -161,8 +172,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   .go-buttons .btn{flex:1}
   .sheet{box-shadow:6px 6px 0 var(--ink)}
   #main-menu .ticket-chip{position:static;align-self:flex-start;margin-bottom:18px}
-  #lap-txt,#coin-box,#spd-box{font-size:15px}
-  #spd-box{top:62px}
+}
+/* landscape mobile — keep standard HUD */
+@media(max-width:900px) and (orientation:landscape){
+  #top-bar-btns{top:10px;left:10px;}
 }
 </style>
 </head>
@@ -700,24 +713,33 @@ function resizeCanvas() {
   W = innerWidth; H = innerHeight;
   cv.width = W * D; cv.height = H * D;
 
-  const isPortrait = H > W;
+  // Unified camera: always use same geometry, just swap W↔H for portrait
+  // This makes portrait mobile look identical to landscape PC
+  const refW = Math.max(W, H); // logical "width" (always the longer dimension)
+  const refH = Math.min(W, H); // logical "height" (always the shorter dimension)
 
-  if (isPortrait) {
-    // Responsive portrait camera framing: scale track to fit cleanly across screen width
-    tw = Math.min(W * 0.46, H * 0.22);
-    rIn = tw * 1.5;
+  // Standard landscape-style geometry applied to refW/refH
+  const rawRIn = refH * 0.2 + refW * 0.55;
+  const rawTw  = refH * 0.54;
+
+  if (H > W) {
+    // Portrait: rotate camera 90° — swap roles of W/H, then re-anchor on screen
+    // Scale so the track arc spans the full portrait width
+    const scale = W / refH;  // compress to fit portrait screen width
+    rIn = rawRIn * scale;
+    tw  = rawTw  * scale;
     rOut = rIn + tw;
-    lw = tw / 5;
-    cx = W / 2;
-    cy = H * 0.28 - rIn;
+    lw  = tw / 5;
+    cx  = W / 2;
+    cy  = H * 0.38 - rIn;   // push track center up — shows more arc on screen like landscape
   } else {
-    // Landscape camera framing
-    cx = W / 2;
-    cy = -W * 0.55;
-    rIn = H * 0.2 + W * 0.55;
-    tw = H * 0.54;
+    // Landscape (PC default) — unchanged
+    cx  = W / 2;
+    cy  = -W * 0.55;
+    rIn = rawRIn;
+    tw  = rawTw;
     rOut = rIn + tw;
-    lw = tw / 5;
+    lw  = tw / 5;
   }
 
   checkOrientationAlert();
